@@ -1,4 +1,5 @@
 import java.io.File;
+import java.net.ServerSocket;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -12,6 +13,7 @@ public class CommandLine {
     private static Scanner scanner = new Scanner(System.in);
     private static String currentDirectory = startedDirectory;
     private static File currentDirectoryFile = new File(currentDirectory);
+
     private static Thread commandLineThread = new Thread(new Runnable() {
         @Override
         public void run() {
@@ -38,6 +40,7 @@ public class CommandLine {
 
     private static void readAndRunCommand() {
         while (true) {
+            System.out.print(currentDirectory + "->");
             command = scanner.nextLine().split(" ");
             switch (command[0]) {
                 case "cd":
@@ -50,6 +53,11 @@ public class CommandLine {
                     break;
                 case "pwd":
                     PWD.printWayDirectory(currentDirectory);
+                    break;
+                case "run":
+                    if (command.length > 1) {
+                        Run.runProgram(command[1]);
+                    }
                     break;
                 case "help":
                     Help.printHelp();
