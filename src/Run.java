@@ -5,11 +5,15 @@ import java.io.IOException;
  */
 public class Run {
 
-    public static void runProgram(String program) {
+    public static void runProgram(String programName) {
         try {
-            Process process = new ProcessBuilder(program).start();
+            if (CommandLine.getStartedDirectory().equals("C:\\")) {
+                new ProcessBuilder(CommandLine.getCurrentDirectory() + programName).start();
+            } else {
+                new ProcessBuilder(programName).start();
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            CommandLine.getPrintWriter().println("Can't find " + programName);
         }
     }
 
