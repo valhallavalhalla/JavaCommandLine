@@ -1,3 +1,7 @@
+package CommandLine;
+
+import Commands.*;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,9 +23,11 @@ public class CommandLine {
     private static PrintWriter printWriter;
     private static String[] command;
     private static String currentDirectory;
+
     public static void setCurrentDirectory(String currentDirectory) {
         CommandLine.currentDirectory = currentDirectory;
     }
+
     public static String getStartedDirectory() {
         return startedDirectory;
     }
@@ -41,7 +47,7 @@ public class CommandLine {
     private static void readAndRunCommand() throws IOException {
         currentDirectory = startedDirectory;
         while (true) {
-            printWriter.printf(currentDirectory + " ->");
+            //printWriter.printf(currentDirectory + " ->");
             command = scanner.nextLine().split(" ");
             switch (command[0]) {
                 case "cd":
@@ -55,6 +61,12 @@ public class CommandLine {
                 case "pwd":
                     PWD.printWayDirectory();
                     break;
+                case "md":
+                    MakeDirectory.makeDirectory(command, currentDirectory);
+                    break;
+                case "copy":
+                    Copy.copy(command, currentDirectory);
+                    break;
                 case "run":
                     if (command.length > 1) {
                         Run.runProgram(command[1]);
@@ -63,6 +75,8 @@ public class CommandLine {
                 case "help":
                     Help.printHelp();
                     break;
+                case "exit":
+                    Exit.exitCommandLine();
                 default:
                     printWarning();
                     break;
@@ -98,19 +112,11 @@ public class CommandLine {
         while (true) {
             input = scanner.nextLine();
             if (input.equals("l")) {
-                printWriter = new PrintWriter(System.out, true);
+                buildLocalVersion();
                 break;
             } else if (input.equals("n")) {
                 System.out.println("Waiting for user to connect...");
-                try {
-                    serverSocket = new ServerSocket(SERVER_PORT);
-                    socket = serverSocket.accept();
-                    System.out.println("User connected.");
-                    scanner = new Scanner(socket.getInputStream());
-                    printWriter = new PrintWriter(socket.getOutputStream(), true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                buildNetworkVersion();
                 break;
             } else {
                 System.out.println("Wrong input.");
@@ -118,10 +124,25 @@ public class CommandLine {
         }
     }
 
+    private static void buildNetworkVersion() {
+        try {
+            serverSocket = new ServerSocket(SERVER_PORT);
+            socket = serverSocket.accept();
+            System.out.println("User connected.");
+            scanner = new Scanner(socket.getInputStream());
+            printWriter = new PrintWriter(socket.getOutputStream(), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    private static void buildLocalVersion() {
+        printWriter = new PrintWriter(System.out, true);
+    }
+
     public static void startCommandLine() {
-        printGreetings();
         chooseSystem();
         localOrNetVersion();
+        printGreetings();
         try {
             readAndRunCommand();
         } catch (IOException e) {

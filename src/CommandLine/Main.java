@@ -1,3 +1,5 @@
+package CommandLine;
+
 /**
  * Created by andrii on 16.10.15.
  */
