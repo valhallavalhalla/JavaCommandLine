@@ -67,12 +67,12 @@ public class Client {
             Socket socket = new Socket(SERVER_IP, 21212);
             String fileName = new DataInputStream(socket.getInputStream()).readUTF();
             String directoryName = new DataInputStream(socket.getInputStream()).readUTF();
-            if (directoryName.equals("")) {
+            boolean isDirectory = new DataInputStream(socket.getInputStream()).readBoolean();
+            if (isDirectory) {
+                new File(destinationDirectory.getName() + "/" + directoryName + "/" + fileName).mkdir();
+            } else if (directoryName.equals("")) {
                 Files.copy(socket.getInputStream(), new File(destinationDirectory.getName() + "/" + fileName).toPath());
             } else {
-                if (!new File(destinationDirectory.getName() + "/" + directoryName).canRead()) {
-                    new File(destinationDirectory.getName() + "/" + directoryName).mkdir();
-                }
                 Files.copy(socket.getInputStream(), new File(destinationDirectory.getName() + "/" + directoryName + "/" + fileName).toPath());
             }
             socket.close();
