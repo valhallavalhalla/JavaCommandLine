@@ -93,6 +93,43 @@ public class CommandLine {
         printWriter.println("Command '" + command[0] + "' not found. Type 'help' to get command list.");
     }
 
+    private static void localOrNetVersion() {
+        System.out.println("Input 'l' for local, or 'n' for network version of JavaCommandLine.");
+        System.out.println("Network version will build automatically in 10 sec");
+        Thread userChoose = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    String input;
+                    input = scanner.nextLine();
+                    if (input.equals("l")) {
+                        buildLocalVersion();
+                        break;
+                    } else if (input.equals("n")) {
+                        System.out.println("Waiting for user to connect...");
+                        buildNetworkVersion();
+                        break;
+                    } else {
+                        System.out.println("Wrong input.");
+                    }
+                }
+            }
+        });
+        userChoose.start();
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (userChoose.isAlive()) {
+            try {
+                userChoose.stop();
+            } catch (Exception ignored) {
+            }
+            buildNetworkVersion();
+        }
+    }
+
     private static void chooseSystem() {
         if (new File ("C:\\").canRead()) {
             startedDirectory = "C:\\";
@@ -103,24 +140,6 @@ public class CommandLine {
         } else {
             System.out.println("Unknown OS");
             System.exit(0);
-        }
-    }
-
-    private static void localOrNetVersion() {
-        System.out.println("Input 'l' for local, or 'n' for network version of JavaCommandLine");
-        String input;
-        while (true) {
-            input = scanner.nextLine();
-            if (input.equals("l")) {
-                buildLocalVersion();
-                break;
-            } else if (input.equals("n")) {
-                System.out.println("Waiting for user to connect...");
-                buildNetworkVersion();
-                break;
-            } else {
-                System.out.println("Wrong input.");
-            }
         }
     }
 
