@@ -13,20 +13,16 @@ import java.nio.file.Files;
  */
 public class Copy {
 
-    private static String fileToCopyName;
-    private static String wayToFileWithName;
-    private static File fileToCopy;
-    private static ServerSocket serverForCopy;
-    private static final int SERVER_FOR_COPY = 21212;
-    private static Socket clientSocket;
     public static void copy(String[] command, String currentDirectory) throws IOException {
-        fileToCopyName = FileNameBuilder.buildFileName(command);
+        String fileToCopyName = FileNameBuilder.buildFileName(command);
+        String wayToFileWithName;
+
         if (!fileToCopyName.startsWith(CommandLine.getStartedDirectory())) {
             wayToFileWithName = currentDirectory + fileToCopyName;
         } else {
             wayToFileWithName = fileToCopyName;
         }
-        fileToCopy = new File(wayToFileWithName);
+        File fileToCopy = new File(wayToFileWithName);
         if (fileToCopy.canRead()) {
             if (fileToCopy.isDirectory()) {
                 copyDirectory(fileToCopy, "");
@@ -50,17 +46,17 @@ public class Copy {
     }
 
     private static void copyFile(File fileToCopy, String fileDirectory) throws IOException {
-        serverForCopy = new ServerSocket(SERVER_FOR_COPY);
+
         CommandLine.getPrintWriter().println("Copying...");
-        clientSocket = serverForCopy.accept();
-        new DataOutputStream(clientSocket.getOutputStream()).writeUTF(fileToCopy.getName());
-        new DataOutputStream(clientSocket.getOutputStream()).writeUTF(fileDirectory);
-        new DataOutputStream(clientSocket.getOutputStream()).writeBoolean(fileToCopy.isDirectory());
+        Socket uploadSocket = new Socket(CommandLine.getClientIp(), CommandLine.getClientPort());
+        new DataOutputStream(uploadSocket.getOutputStream()).writeUTF(fileToCopy.getName());
+        new DataOutputStream(uploadSocket.getOutputStream()).writeUTF(fileDirectory);
+        new DataOutputStream(uploadSocket.getOutputStream()).writeBoolean(fileToCopy.isDirectory());
         if (!fileToCopy.isDirectory()) {
-            Files.copy(fileToCopy.toPath(), clientSocket.getOutputStream());
+            Files.copy(fileToCopy.toPath(), uploadSocket.getOutputStream());
         }
         CommandLine.getPrintWriter().println("Successful.");
-        clientSocket.close();
-        serverForCopy.close();
+        uploadSocket.close();
+
     }
 }

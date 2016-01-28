@@ -8,9 +8,16 @@ import java.io.File;
  */
 public class MakeDirectory {
 
-    public static void makeDirectory(String[] command, String currentDirectory) {
-        boolean result = new File(currentDirectory + command[1]).mkdir();
-        System.out.println(result);
+    public static void makeDirectory(String[] command) {
+        boolean result;
+        if (command[1].startsWith(CommandLine.getStartedDirectory())) {
+            result = new File(command[1]).mkdir();
+        } else {
+            result = new File(CommandLine.getCurrentDirectory() + command[1]).mkdir();
+        }
+        if (!result) {
+            System.out.println("Error. Access denied or directory already exist.");
+        }
     }
 
 }

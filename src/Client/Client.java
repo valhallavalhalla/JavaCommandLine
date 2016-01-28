@@ -4,7 +4,6 @@ import java.net.*;
 import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.util.Objects;
 import java.util.Scanner;
 
 /**
@@ -12,18 +11,18 @@ import java.util.Scanner;
  */
 public class Client {
 
-    private static final String SERVER_IP = "127.0.0.1";
-    private static final int SERVER_PORT = 1488;
-    private static Socket socket;
+    private static ServerSocket serverSocket;
+    private static Socket commandLineSocket;
     private static PrintWriter commandLinePrintWriter;
     private static PrintWriter localPrintWriter = new PrintWriter(System.out, true);
     private static Scanner commandLineInputScanner;
     private static Scanner keyboardScanner = new Scanner(System.in);
+    private static final String SYSTEM_WAY_SEPARATOR = System.getProperty("file.separator");
     private static File destinationDirectory = new File("downloads");
     private static Thread outputTread = new Thread(new Runnable() {
         @Override
         public void run() {
-            while (socket.isConnected()) {
+            while (commandLineSocket.isConnected()) {
                 String output = keyboardScanner.nextLine();
                 commandLinePrintWriter.println(output);
             }
@@ -32,7 +31,7 @@ public class Client {
     private static Thread inputThread = new Thread(new Runnable() {
         @Override
         public void run() {
-            while (socket.isConnected()) {
+            while (commandLineSocket.isConnected()) {
                 try {
                     String input = commandLineInputScanner.nextLine();
                     localPrintWriter.println(input);
@@ -48,13 +47,18 @@ public class Client {
 
     public static void startClient() {
         try {
-            socket = new Socket(SERVER_IP, SERVER_PORT);
-            commandLineInputScanner = new Scanner(socket.getInputStream());
-            commandLinePrintWriter = new PrintWriter(socket.getOutputStream(), true);
+            //Подключение к командной строке
+            serverSocket = new ServerSocket(7442);
+            commandLineSocket = serverSocket.accept();
+            commandLineInputScanner = new Scanner(commandLineSocket.getInputStream());
+            commandLinePrintWriter = new PrintWriter(commandLineSocket.getOutputStream(), true);
+            //Создание папки в которую будут копироваться файлы
             if (!destinationDirectory.canRead()) {
                 destinationDirectory.mkdir();
             }
+            //Запуск потока для чтения результата выполнения команд
             inputThread.start();
+            //Запуск потока для отправки команд
             outputTread.start();
         } catch (IOException e) {
             localPrintWriter.println("Server offline.");
@@ -62,20 +66,30 @@ public class Client {
 
     }
 
+    //Метод для копирования отдельных файлов, папок, или же для копирования древа директорий и файлов
     private static void readFile() {
         try {
-            Socket socket = new Socket(SERVER_IP, 21212);
-            String fileName = new DataInputStream(socket.getInputStream()).readUTF();
-            String directoryName = new DataInputStream(socket.getInputStream()).readUTF();
-            boolean isDirectory = new DataInputStream(socket.getInputStream()).readBoolean();
+            //Открытие нового сокета для копирования файла
+            Socket downloadsSocket = serverSocket.accept();
+            //Имя передаваемого файла
+            String fileName = new DataInputStream(downloadsSocket.getInputStream()).readUTF();
+            //Имя папки в которой лежит файл
+            String directoryName = new DataInputStream(downloadsSocket.getInputStream()).readUTF();
+            //Проверка на то, является ли передаваемый файл папкой
+            boolean isDirectory = new DataInputStream(downloadsSocket.getInputStream()).readBoolean();
+
             if (isDirectory) {
-                new File(destinationDirectory.getName() + "/" + directoryName + "/" + fileName).mkdir();
-            } else if (directoryName.equals("")) {
-                Files.copy(socket.getInputStream(), new File(destinationDirectory.getName() + "/" + fileName).toPath());
-            } else {
-                Files.copy(socket.getInputStream(), new File(destinationDirectory.getName() + "/" + directoryName + "/" + fileName).toPath());
+                new File(destinationDirectory.getName() + SYSTEM_WAY_SEPARATOR + directoryName
+                        + SYSTEM_WAY_SEPARATOR + fileName).mkdir();
+            } else if (directoryName.equals("")) { //
+                Files.copy(downloadsSocket.getInputStream(), new File(destinationDirectory.getName()
+                        + SYSTEM_WAY_SEPARATOR + fileName).toPath());
+            } else { //
+                Files.copy(downloadsSocket.getInputStream(), new File(destinationDirectory.getName()
+                        + SYSTEM_WAY_SEPARATOR + directoryName + SYSTEM_WAY_SEPARATOR
+                        + fileName).toPath());
             }
-            socket.close();
+            downloadsSocket.close();
         } catch (FileAlreadyExistsException e) {
             localPrintWriter.println("File already exist.");
         } catch (IOException e) {
